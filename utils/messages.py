@@ -16,7 +16,11 @@ class Messages:
 
     @staticmethod
     def show_info(message: str) -> None:
-        Messages.show_message(message, Messages.INFO_SYMBOL, Fore.GREEN)
+        Messages.show_message(message, Messages.INFO_SYMBOL, Fore.BLUE)
+
+    @staticmethod
+    def show_success(message: str) -> None:
+        Messages.show_message(message, Messages.SUCCESS_SYMBOL, Fore.GREEN)
 
     @staticmethod
     def show_warning(message: str) -> None:

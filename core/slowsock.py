@@ -75,7 +75,7 @@ class Slowsock:
         return int(self.status)
 
     # Method to close the connection
-    def close_connection(self, status=Status.UNKNOWN) -> None:
+    def close_connection(self, status=Status.DISCONNECTED) -> None:
         self.status = status
         self.connection.close()
 
