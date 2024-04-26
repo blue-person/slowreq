@@ -86,7 +86,7 @@ if __name__ == "__main__":
             # Create sockets if some have been closed
             required_amount = CONNECTIONS_AMOUNT - len(socket_set)
             if required_amount > 0:
-                print()
+                print("\n")
                 msg.show_warning("Some sockets were lost.")
                 msg.show_info(f"Creating {required_amount} sockets...")
                 socket_set += create_socket_set(required_amount)
