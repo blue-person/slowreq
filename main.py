@@ -90,15 +90,15 @@ if __name__ == "__main__":
                 msg.show_warning(
                     f"It seems {required_amount} connections were lost in the process."
                 )
-                msg.show_info(f"Trying to create missing connections...")
+                msg.show_info(f"Trying to initiate missing connections...")
                 socket_set += create_socket_set(required_amount)
 
-                # Check if new connections were created
+                # Check if new connections were initiated
                 new_amount = len(socket_set) - remaining_sockets
                 if new_amount > 0:
-                    msg.show_success(f"{new_amount} connections have been created.\n")
+                    msg.show_success(f"{new_amount} connections have been initiated.\n")
                 else:
-                    msg.show_error("No new connections could be created.\n")
+                    msg.show_error("No new connections could be initiated.\n")
 
             # Wait before continuing
             msg.show_info(f"Waiting {WAIT_TIME} seconds before continuing...")
