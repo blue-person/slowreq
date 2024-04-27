@@ -12,7 +12,7 @@ This Python 3 implementation utilizes sockets for a Slowloris attack. It aims to
 
 ### Lite Version
 
-For cases where the program needs to be run using only a single file, a `slowsock-lite` version has been created. This version compresses everything into a single file and contains only the essentials for functioning.
+For cases where the program needs to be run using only a single file, a [lite](https://github.com/blue-person/slowsock/releases/latest/download/slowsock-lite.zip) version has been created. This version compresses everything into a single file and contains only the essentials for functioning.
 
 ## Requirements
 This project has been developed using Python 3.12.3. The libraries used are included in this Python version. However, in case `colorama` or `typing` libraries are not available for any reason, they are specified in the `requirements.txt` file.
