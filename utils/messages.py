@@ -1,8 +1,8 @@
-# Import libraries
+# Libraries
 from colorama import Fore, Style
 
 
-# Class to handle messages
+# Define the Messages class
 class Messages:
     # Constants
     SUCCESS_SYMBOL = "✔"
@@ -10,22 +10,23 @@ class Messages:
     WARNING_SYMBOL = "⚠"
     INFO_SYMBOL = "ℹ"
 
-    @staticmethod
-    def show_message(message: str, symbol: str, color: str) -> None:
-        print(f"{color}[{symbol}] {message}{Style.RESET_ALL}")
+    # Constructor
+    def __init__(self, verbose: bool = True) -> None:
+        self.verbose = verbose
 
-    @staticmethod
-    def show_info(message: str) -> None:
-        Messages.show_message(message, Messages.INFO_SYMBOL, Fore.BLUE)
+    # Methods for displaying messages
+    def show_message(self, message: str, symbol: str, color: str) -> None:
+        if self.verbose:
+            print(f"{color}[{symbol}] {message}{Style.RESET_ALL}")
 
-    @staticmethod
-    def show_success(message: str) -> None:
-        Messages.show_message(message, Messages.SUCCESS_SYMBOL, Fore.GREEN)
+    def show_info(self, message: str) -> None:
+        self.show_message(message, self.INFO_SYMBOL, Fore.WHITE)
 
-    @staticmethod
-    def show_warning(message: str) -> None:
-        Messages.show_message(message, Messages.WARNING_SYMBOL, Fore.YELLOW)
+    def show_success(self, message: str) -> None:
+        self.show_message(message, self.SUCCESS_SYMBOL, Fore.GREEN)
 
-    @staticmethod
-    def show_error(message: str) -> None:
-        Messages.show_message(message, Messages.FAILURE_SYMBOL, Fore.RED)
+    def show_warning(self, message: str) -> None:
+        self.show_message(message, self.WARNING_SYMBOL, Fore.YELLOW)
+
+    def show_error(self, message: str) -> None:
+        self.show_message(message, self.FAILURE_SYMBOL, Fore.RED)

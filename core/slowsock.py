@@ -1,4 +1,4 @@
-# Import libraries
+# Libraries
 import ssl
 import socket
 from enum import IntEnum
