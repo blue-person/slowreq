@@ -4,6 +4,7 @@ import random
 from typing import Optional
 from concurrent.futures import ThreadPoolExecutor
 
+# Internal packages
 from utils.files import Files
 from utils.messages import Messages
 from core.slowsock import Slowsock
