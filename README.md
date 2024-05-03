@@ -11,7 +11,7 @@
 This Python 3 script employs HTTP requests for an HTTP flood attack, aiming to inundate a web server. Once the target is saturated with requests, rendering it incapable of responding to legitimate traffic, subsequent requests from genuine users will result in denial-of-service.
 
 ### Lite Version
-For cases where the program needs to be run using only a single file, a [lite version](https://github.com/blue-person/slowreq/releases/latest/download/slowsock-lite.zip) has been created. This version compresses everything into a single file and contains only the essentials for functioning.
+For cases where the program needs to be run using only a single file, a [lite version](https://github.com/blue-person/slowreq/releases/latest/download/slowreq-lite.zip) has been created. This version compresses everything into a single file and contains only the essentials for functioning.
 
 ## Requirements
 This project has been developed using Python 3.12.3 and uses the libraries listed in the [requirements.txt](https://github.com/blue-person/slowreq/blob/a97129bfcda2a3748a2ef6a584c7fb82f966e794/requirements.txt) file."
